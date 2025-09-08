@@ -24,7 +24,7 @@ header {
   padding:10px 12px;
   border-bottom:3px solid var(--accent); 
   display:grid;
-  grid-template-columns:1fr auto;
+  grid-template-columns:1fr  auto;
   gap:10px;
   align-items:center;
 }
@@ -33,7 +33,7 @@ header {
 .brand-text h1 { font-size:18px; margin:0; }
 .brand-text .muted { color:var(--muted); font-size:12px; margin-top:2px; }
 
-.actions { display:flex; gap:8px; }
+.actions { display:flex; gap:8px; flex-wrap:wrap; }
 
 /* Buttons */
 button {
@@ -88,16 +88,17 @@ input, textarea {
 .preview tfoot td { font-weight:bold; }
 
 /* Footer */
-footer { padding:10px 12px; display:flex; gap:10px; align-items:center; border-top:1px solid #ccc; background:#ffffff; }
+footer { padding:10px 12px; display:flex; gap:10px; align-items:center; border-top:1px solid #ccc; background:#ffffff; flex-wrap:wrap; }
 footer .muted { font-size:12px; color:#888; }
 
-/* History (Saved Invoices) */
+/* Lists (Invoices/Customers) */
 .history-controls { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
 .history-controls input { max-width:320px; }
 .history-list table { width:100%; border-collapse:collapse; }
 .history-list th, .history-list td { padding:10px; border-bottom:1px solid #eee; text-align:left; }
 .history-list th { background:#f6faf7; border-bottom:1px solid #dfe8e1; }
 .history-list .row-actions { display:flex; gap:6px; }
+.badge-paid { color:#b00020; font-weight:bold; margin-left:6px; }
 
 /* White preview card */
 .card.preview { background:#fff; color:#000; }
