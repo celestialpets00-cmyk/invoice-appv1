@@ -1,10 +1,10 @@
 :root {
-  --bg:#ffffff;          /* ✅ White background */
-  --card:#ffffff;        /* ✅ White cards */
-  --ink:#000000;         /* ✅ Black text */
-  --muted:#555555;       /* ✅ Muted gray text */
-  --line:#cccccc;        /* ✅ Light gray borders */
-  --accent:#2e7d32;      /* ✅ Green accent */
+  --bg:#ffffff;          
+  --card:#ffffff;        
+  --ink:#000000;         
+  --muted:#555555;       
+  --line:#cccccc;        
+  --accent:#2e7d32;      
 }
 
 * { box-sizing:border-box; }
@@ -20,9 +20,9 @@ html, body {
 header {
   position:sticky;
   top:0;
-  background:#f5f5f5;        /* ✅ Light header */
+  background:#ffffff;              /* ✅ White header background */
   padding:10px 12px;
-  border-bottom:2px solid var(--accent);
+  border-bottom:3px solid var(--accent); /* ✅ Strong green accent line */
   display:grid;
   grid-template-columns:1fr auto;
   gap:10px;
@@ -124,7 +124,7 @@ input, textarea {
   display:flex;
   justify-content:space-between;
   align-items:center;
-  color:#000; /* Black totals */
+  color:#000;
 }
 .totals .numbers .grand {
   font-size:18px;
@@ -170,7 +170,7 @@ footer {
   gap:10px;
   align-items:center;
   border-top:1px solid #ccc;
-  background:#f5f5f5;      /* ✅ Light footer */
+  background:#f5f5f5;
 }
 footer .muted { font-size:12px; color:var(--muted); }
 
