@@ -1,4 +1,4 @@
-// ====== Heavy Metal Medics — Invoice App (GST 5% + Presets) ======
+// ====== Heavy Metal Medics — Invoice App (GST 5% + Presets + Saved Invoices Screen) ======
 const $ = (id) => document.getElementById(id);
 const LOGO_SRC = "icons/icon-192.png";
 
@@ -23,6 +23,18 @@ function escapeHtml(s) {
   ));
 }
 function nl2br(s) { return (s || "").replace(/\n/g, "<br>"); }
+
+// Compute totals for an existing saved invoice object
+function computeTotalsFrom(inv) {
+  const subtotal = (inv.items || []).reduce((s, it) => s + (Number(it.qty||0) * Number(it.price||0)), 0);
+  const discRate = Number(inv.invoice?.discountRate || 0) / 100;
+  const taxRate  = Number(inv.invoice?.taxRate ?? state.GST_RATE) / 100;
+  const discount = subtotal * discRate;
+  const taxable  = Math.max(0, subtotal - discount);
+  const tax      = taxable * taxRate;
+  const total    = taxable + tax;
+  return { subtotal, discount, tax, total };
+}
 
 // ---------- Items ----------
 function addItem(i = null) {
@@ -115,7 +127,7 @@ function wirePresetForm() {
   });
 }
 
-// ---------- Totals ----------
+// ---------- Totals (live) ----------
 function calcTotals() {
   const subtotal = state.items.reduce((s, it) => s + (it.qty * it.price), 0);
   const discRate = parseFloat($("discountRate").value || 0) / 100;
@@ -187,6 +199,166 @@ function setInvoice(data) {
   render();
 }
 
+// ---------- Saved Invoices (History) ----------
+function saveInvoicesToStorage() {
+  localStorage.setItem("invoices.v1", JSON.stringify(state.invoices));
+}
+
+function showHistory(show) {
+  $("historyCard").style.display = show ? "block" : "none";
+  if (show) {
+    $("historySearch").value = "";
+    renderHistoryList("");
+  }
+}
+
+function renderHistoryList(filterText = "") {
+  const list = $("historyList");
+  const q = (filterText || "").toLowerCase();
+
+  const filtered = state.invoices.filter(inv => {
+    const num = (inv.invoice?.number || "").toLowerCase();
+    const client = (inv.client?.name || "").toLowerCase();
+    return num.includes(q) || client.includes(q);
+  });
+
+  // Newest first: assuming earlier saves were unshifted at top
+  const rows = filtered.map((inv, i) => {
+    const { total } = computeTotalsFrom(inv);
+    const num = escapeHtml(inv.invoice?.number || "");
+    const date = escapeHtml(inv.invoice?.date || "");
+    const client = escapeHtml(inv.client?.name || "");
+    return `
+      <tr>
+        <td>${num}</td>
+        <td>${date}</td>
+        <td>${client}</td>
+        <td>${money(total)}</td>
+        <td class="row-actions">
+          <button data-act="open" data-num="${num}">Open</button>
+          <button data-act="del" data-num="${num}" class="secondary">Delete</button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  list.innerHTML = `
+    <div class="history-list">
+      <table>
+        <thead>
+          <tr>
+            <th>Invoice #</th>
+            <th>Date</th>
+            <th>Client</th>
+            <th>Total</th>
+            <th style="width:160px">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows || `<tr><td colspan="5" class="muted">No saved invoices yet.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // Wire row buttons
+  list.querySelectorAll("button[data-act='open']").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const num = btn.getAttribute("data-num");
+      const inv = state.invoices.find(x => (x.invoice?.number || "") === num);
+      if (inv) {
+        setInvoice(inv);
+        showHistory(false);
+      }
+    });
+  });
+  list.querySelectorAll("button[data-act='del']").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const num = btn.getAttribute("data-num");
+      const idx = state.invoices.findIndex(x => (x.invoice?.number || "") === num);
+      if (idx >= 0 && confirm(`Delete invoice ${num}?`)) {
+        state.invoices.splice(idx, 1);
+        saveInvoicesToStorage();
+        renderHistoryList($("historySearch").value);
+      }
+    });
+  });
+}
+
+// ---------- Save / Load / New ----------
+function saveInvoice() {
+  const inv = currentInvoice();
+  if (!inv.invoice.number) { alert("Please set an Invoice # first."); return; }
+  const i = state.invoices.findIndex(x => x.invoice.number === inv.invoice.number);
+  if (i >= 0) state.invoices[i] = inv;
+  else state.invoices.unshift(inv);
+  saveInvoicesToStorage();
+  alert("Saved locally.");
+}
+
+function loadInvoicePrompt() {
+  // Kept for compatibility, but we show the history screen instead
+  showHistory(true);
+}
+
+function newInvoice() {
+  const biz = JSON.parse(localStorage.getItem("lastBiz.v1") || "{}");
+  setInvoice({
+    business: {
+      name: biz.name || "Heavy Metal Medics",
+      email: biz.email || "",
+      phone: biz.phone || "",
+      addr:  biz.addr || "",
+      logo:  LOGO_SRC
+    },
+    invoice: {
+      number: "INV-" + Date.now().toString().slice(0, 6),
+      date: new Date().toISOString().slice(0, 10),
+      due: "",
+      currency: "$",
+      taxRate: state.GST_RATE,
+      discountRate: 0,
+      notes: "",
+      terms: ""
+    },
+    client: {},
+    items: []
+  });
+}
+
+// ---------- Backup / Restore ----------
+function exportJson() {
+  const blob = new Blob([JSON.stringify({ invoices: state.invoices, presets: state.presets }, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "invoices_backup.json"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJson(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (Array.isArray(data)) {
+        state.invoices = data;
+      } else {
+        if (Array.isArray(data.invoices)) state.invoices = data.invoices;
+        if (Array.isArray(data.presets)) state.presets = data.presets;
+      }
+      saveInvoicesToStorage();
+      savePresets();
+      renderPresetButtons();
+      alert("Imported.");
+    } catch {
+      alert("Invalid JSON");
+    }
+  };
+  reader.readAsText(f);
+}
+
 // ---------- Render ----------
 function render() {
   const { subtotal, discount, tax, total } = calcTotals();
@@ -256,84 +428,8 @@ function render() {
 
       ${inv.invoice.notes ? `<div style="margin-top:10px"><strong>Notes:</strong><br>${nl2br(escapeHtml(inv.invoice.notes))}</div>` : ""}
       ${inv.invoice.terms ? `<div style="margin-top:10px"><strong>Terms:</strong><br>${nl2br(escapeHtml(inv.invoice.terms))}</div>` : ""}
-
-      <!-- Footer watermark -->
-      <div style="margin-top:30px;text-align:center;font-size:12px;color:#2e7d32;opacity:0.8;border-top:1px solid #ccc;padding-top:8px">
-        Heavy Metal Medics — Agricultural Equipment Specialists
-      </div>
     </div>
   `;
-}
-
-// ---------- Save / Load / New ----------
-function saveInvoice() {
-  const inv = currentInvoice();
-  if (!inv.invoice.number) { alert("Please set an Invoice # first."); return; }
-  const i = state.invoices.findIndex(x => x.invoice.number === inv.invoice.number);
-  if (i >= 0) state.invoices[i] = inv;
-  else state.invoices.unshift(inv);
-  localStorage.setItem("invoices.v1", JSON.stringify(state.invoices));
-  alert("Saved locally.");
-}
-
-function loadInvoice() {
-  if (state.invoices.length === 0) { alert("No saved invoices yet."); return; }
-  const choices = state.invoices.map((x, i) => `${i + 1}. ${x.invoice.number} — ${x.client.name || ""}`).join("\n");
-  const pick = prompt("Choose invoice to load:\n" + choices + "\nEnter number:");
-  const idx = (parseInt(pick, 10) || 0) - 1;
-  if (idx >= 0 && idx < state.invoices.length) setInvoice(state.invoices[idx]);
-}
-
-function newInvoice() {
-  const biz = JSON.parse(localStorage.getItem("lastBiz.v1") || "{}");
-  setInvoice({
-    business: {
-      name: biz.name || "Heavy Metal Medics",
-      email: biz.email || "",
-      phone: biz.phone || "",
-      addr:  biz.addr || "",
-      logo:  LOGO_SRC
-    },
-    invoice: {
-      number: "INV-" + Date.now().toString().slice(0, 6),
-      date: new Date().toISOString().slice(0, 10),
-      due: "",
-      currency: "$",
-      taxRate: state.GST_RATE,
-      discountRate: 0,
-      notes: "",
-      terms: ""
-    },
-    client: {},
-    items: []
-  });
-}
-
-// ---------- Backup / Restore ----------
-function exportJson() {
-  const blob = new Blob([JSON.stringify({ invoices: state.invoices }, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = "invoices_backup.json"; a.click();
-  URL.revokeObjectURL(url);
-}
-
-function importJson(e) {
-  const f = e.target.files[0];
-  if (!f) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      const data = JSON.parse(reader.result);
-      if (Array.isArray(data)) state.invoices = data;
-      else if (Array.isArray(data.invoices)) state.invoices = data.invoices;
-      localStorage.setItem("invoices.v1", JSON.stringify(state.invoices));
-      alert("Imported.");
-    } catch {
-      alert("Invalid JSON");
-    }
-  };
-  reader.readAsText(f);
 }
 
 // ---------- Init ----------
@@ -352,8 +448,12 @@ window.addEventListener("load", () => {
   renderPresetButtons();
   wirePresetForm();
 
+  // History screen
+  $("loadInvoiceBtn").addEventListener("click", loadInvoicePrompt);
+  $("historyClose").addEventListener("click", () => showHistory(false));
+  $("historySearch").addEventListener("input", (e) => renderHistoryList(e.target.value));
+
   $("saveInvoiceBtn").addEventListener("click", saveInvoice);
-  $("loadInvoiceBtn").addEventListener("click", loadInvoice);
   $("newInvoiceBtn").addEventListener("click", newInvoice);
   $("shareBtn").addEventListener("click", () => window.print());
 
