@@ -1,3 +1,27 @@
+/* ==== HOTFIX: one-time SW/cache reset + version badge ==== */
+(function(){
+  // show build version on the <html> tag for quick visual confirmation
+  document.documentElement.setAttribute('data-build', 'r11.1-hotfix');
+
+  // run once: unregister all service workers and clear caches, then hard-reload
+  if (!localStorage.getItem('sw_reset_done_r111')) {
+    localStorage.setItem('sw_reset_done_r111', '1');
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations()
+        .then(rs => Promise.all(rs.map(r => r.unregister())))
+        .then(() => caches.keys())
+        .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+        .then(() => {
+          // bounce to a fresh URL so the browser pulls the newest files
+          const u = new URL(location.href);
+          u.searchParams.set('v', String(Date.now()).slice(-6));
+          if (!u.hash) u.hash = '#home';
+          location.replace(u.toString());
+        });
+    }
+  }
+})();
+
 // ===== Heavy Metal Medics — Invoice App (v11, routed pages + hardened) =====
 
 // ---------- Tiny helpers ----------
