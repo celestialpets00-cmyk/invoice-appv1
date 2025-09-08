@@ -1,8 +1,8 @@
-// Cache bump v7 – forces browser to fetch fresh files
+// Cache bump v8 – fetch fresh files for router build
 self.addEventListener("install",(e)=>{
   self.skipWaiting();
   e.waitUntil(
-    caches.open("invoice-cache-v7").then(cache=>cache.addAll([
+    caches.open("invoice-cache-v8").then(cache=>cache.addAll([
       "./","index.html","style.css","app.js","manifest.json",
       "icons/icon-192.png","icons/icon-512.png"
     ]))
@@ -10,7 +10,7 @@ self.addEventListener("install",(e)=>{
 });
 self.addEventListener("activate",(e)=>{
   e.waitUntil(
-    caches.keys().then(keys=>Promise.all(keys.filter(k=>k!=="invoice-cache-v7").map(k=>caches.delete(k))))
+    caches.keys().then(keys=>Promise.all(keys.filter(k=>k!=="invoice-cache-v8").map(k=>caches.delete(k))))
     .then(()=>self.clients.claim())
   );
 });
