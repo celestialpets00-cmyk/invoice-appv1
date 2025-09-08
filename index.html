@@ -11,6 +11,13 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="style.css">
   <script defer src="app.js"></script>
+  <style>
+    /* Simple “page” routing */
+    [data-page] { display:none; }
+    [data-page].active { display:block; }
+    .route-header { display:flex; gap:8px; align-items:center; margin-bottom:8px }
+    .backlink { text-decoration:none; }
+  </style>
 </head>
 <body>
 <header>
@@ -22,164 +29,204 @@
     </div>
   </div>
   <div class="actions">
-    <button id="newInvoiceBtn" class="primary">New</button>
-    <button id="saveInvoiceBtn">Save</button>
-    <button id="loadInvoiceBtn">Invoices</button>
-    <button id="openCustomersBtn">Customers</button>
-    <button id="profitBtn">Profit</button>
+    <a href="#home"><button class="primary">Home</button></a>
+    <a href="#history"><button>Invoices</button></a>
+    <a href="#customers"><button>Customers</button></a>
+    <a href="#profit"><button>Profit</button></a>
     <button id="markPaidBtn" class="secondary">Mark Paid</button>
     <button id="shareBtn">Share/Print</button>
+    <button id="saveInvoiceBtn">Save</button>
+    <button id="newInvoiceBtn">New</button>
   </div>
 </header>
 
 <main>
-  <!-- Saved Invoices -->
-  <section class="card" id="historyCard" style="display:none">
-    <h2>Saved Invoices</h2>
-    <div class="history-controls">
-      <input id="historySearch" placeholder="Search by invoice # or client name">
-      <button id="historyClose" class="secondary">Close</button>
-    </div>
-    <div id="historyList" class="history-list"></div>
-  </section>
+  <!-- ===== PAGE: HOME ===== -->
+  <div data-page="home" id="page-home" class="active">
+    <!-- Your business -->
+    <section class="card">
+      <h2>Your Business (pre-filled)</h2>
+      <div class="grid two">
+        <label>Business Name<input id="bizName" value="Heavy Metal Medics"></label>
+        <label>Email<input id="bizEmail" placeholder="you@example.com"></label>
+        <label>Phone<input id="bizPhone" placeholder="+1 (555) 555-5555"></label>
+        <label>Address<textarea id="bizAddr" rows="2" placeholder="Street, City, Province, Postal"></textarea></label>
+      </div>
+    </section>
 
-  <!-- Saved Customers -->
-  <section class="card" id="customersCard" style="display:none">
-    <h2>Saved Customers</h2>
-    <div class="history-controls">
-      <input id="customerSearch" placeholder="Search by name, phone or email">
-      <button id="customersClose" class="secondary">Close</button>
-    </div>
-    <div id="customersList" class="history-list"></div>
-  </section>
+    <!-- Bill to -->
+    <section class="card">
+      <h2>Bill To</h2>
+      <div class="grid two">
+        <label>Client Name<input id="clientName"></label>
+        <label>Client Email<input id="clientEmail"></label>
+        <label>Client Phone<input id="clientPhone"></label>
+        <label>Client Address<textarea id="clientAddr" rows="2"></textarea></label>
+      </div>
+      <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
+        <a href="#customers"><button class="secondary">Load Customer</button></a>
+        <button id="saveCustomerBtn">Save Customer</button>
+      </div>
+    </section>
 
-  <!-- Profit & Expenses -->
-  <section class="card" id="profitCard" style="display:none">
-    <div class="profit-controls">
-      <div class="muted">Profit & Expenses</div>
-      <div class="spacer"></div>
-      <label style="display:flex; gap:6px; align-items:center;">
-        <span class="muted">Range</span>
-        <select id="profitRange"></select>
-      </label>
-      <button id="profitClose" class="secondary">Close</button>
-    </div>
+    <!-- Invoice Details -->
+    <section class="card">
+      <h2>Invoice Details</h2>
+      <div class="grid two">
+        <label>Invoice #<input id="invNumber" placeholder="INV-123456"></label>
+        <label>Invoice Date<input id="invDate" type="date"></label>
+        <label>Due Date<input id="dueDate" type="date"></label>
+        <label>Currency
+          <select id="currency">
+            <option value="$">$</option>
+            <option value="C$">C$</option>
+            <option value="€">€</option>
+            <option value="£">£</option>
+          </select>
+        </label>
+        <label>GST % (fixed)
+          <input id="taxRate" value="5" disabled>
+        </label>
+        <label>Discount %
+          <input id="discountRate" type="number" step="0.01" value="0">
+        </label>
+      </div>
+    </section>
 
-    <div class="profit-grid">
-      <!-- Left: Expenses donut & breakdown -->
-      <div class="expenses-pane">
-        <div class="section-title">EXPENSES</div>
-        <div class="donut-row">
-          <canvas id="expensesDonut" width="160" height="160" aria-label="Expenses donut chart"></canvas>
-          <div class="expenses-summary">
-            <div class="big-number" id="expensesTotal">$0.00</div>
-            <div class="muted">Total expenses</div>
-            <ul id="expensesBreakdown" class="legend"></ul>
+    <!-- Items -->
+    <section class="card">
+      <h2>Line Items</h2>
+      <div id="items"></div>
+      <div id="presetButtons" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px"></div>
+      <div style="margin-top:8px">
+        <button id="addItemBtn" class="secondary">+ Add Item</button>
+      </div>
+
+      <div style="margin-top:12px; border-top:1px solid #ccc; padding-top:12px">
+        <h3 style="margin:0 0 8px 0; font-size:14px; color:#2e7d32">Save a new quick-add</h3>
+        <div class="grid two" style="gap:8px">
+          <label>Label (e.g., Labour)<input id="presetName" placeholder="Labour"></label>
+          <label>Price<input id="presetPrice" type="number" step="0.01" value="110"></label>
+          <label>Qty<input id="presetQty" type="number" step="0.01" value="1"></label>
+          <div><button id="addPresetBtn" class="secondary">Save Preset</button></div>
+        </div>
+        <div class="muted" style="margin-top:6px">Tip: Presets are saved on your device and appear as buttons above.</div>
+      </div>
+    </section>
+
+    <!-- Totals -->
+    <section class="card totals">
+      <div class="grid two">
+        <div>
+          <label>Notes<textarea id="notes" rows="3" placeholder="e.g., Thanks for your business!"></textarea></label>
+          <label>Terms<textarea id="terms" rows="3" placeholder="e.g., Payment due within 15 days."></textarea></label>
+        </div>
+        <div class="numbers">
+          <div><span>Subtotal</span><strong id="subtotal">$0.00</strong></div>
+          <div><span>Discount</span><strong id="discount">$0.00</strong></div>
+          <div><span>GST</span><strong id="tax">$0.00</strong></div>
+          <div class="grand"><span>Total</span><strong id="grandTotal">$0.00</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Preview -->
+    <section class="card preview">
+      <h2>Preview</h2>
+      <div id="preview"></div>
+    </section>
+  </div>
+
+  <!-- ===== PAGE: HISTORY ===== -->
+  <div data-page="history" id="page-history">
+    <section class="card">
+      <div class="route-header">
+        <a class="backlink" href="#home"><button class="secondary">Back</button></a>
+        <h2 style="margin:0">Saved Invoices</h2>
+      </div>
+      <div class="history-controls">
+        <input id="historySearch" placeholder="Search by invoice # or client name">
+      </div>
+      <div id="historyList" class="history-list"></div>
+    </section>
+  </div>
+
+  <!-- ===== PAGE: CUSTOMERS ===== -->
+  <div data-page="customers" id="page-customers">
+    <section class="card">
+      <div class="route-header">
+        <a class="backlink" href="#home"><button class="secondary">Back</button></a>
+        <h2 style="margin:0">Saved Customers</h2>
+      </div>
+      <div class="history-controls">
+        <input id="customerSearch" placeholder="Search by name, phone or email">
+      </div>
+      <div id="customersList" class="history-list"></div>
+    </section>
+  </div>
+
+  <!-- ===== PAGE: PROFIT ===== -->
+  <div data-page="profit" id="page-profit">
+    <section class="card">
+      <div class="route-header">
+        <a class="backlink" href="#home"><button class="secondary">Back</button></a>
+        <h2 style="margin:0">Profit & Expenses</h2>
+        <div class="spacer"></div>
+        <label style="display:flex; gap:6px; align-items:center;">
+          <span class="muted">Range</span>
+          <select id="profitRange"></select>
+        </label>
+      </div>
+
+      <div class="profit-grid">
+        <div class="expenses-pane">
+          <div class="section-title">EXPENSES</div>
+          <div class="donut-row">
+            <canvas id="expensesDonut" width="160" height="160" aria-label="Expenses donut chart"></canvas>
+            <div class="expenses-summary">
+              <div class="big-number" id="expensesTotal">$0.00</div>
+              <div class="muted">Total expenses</div>
+              <ul id="expensesBreakdown" class="legend"></ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="profit-pane">
+          <div class="section-title">PROFIT / LOSS</div>
+          <button id="profitTotalBtn" class="profit-big">$0.00</button>
+          <div class="muted small">Tap to view paid invoices in this range</div>
+          <div class="profit-actions">
+            <a href="#profit-details"><button id="profitDetailsBtn">View Details</button></a>
+            <button id="profitExportCsvBtn" class="secondary">Export Range (CSV)</button>
           </div>
         </div>
       </div>
 
-      <!-- Right: Profit/Loss box -->
-      <div class="profit-pane">
-        <div class="section-title">PROFIT / LOSS</div>
-        <button id="profitTotalBtn" class="profit-big">$0.00</button>
-        <div class="muted small">Tap to view paid invoices in this range</div>
-        <div class="profit-actions">
-          <button id="profitDetailsBtn">View Details</button>
-          <button id="profitExportCsvBtn" class="secondary">Export Range (CSV)</button>
-        </div>
+      <div class="divider"></div>
+      <h3 class="subhead">Add Expense</h3>
+      <div class="grid three">
+        <label>Name<input id="expName" placeholder="e.g., Fuel"></label>
+        <label>Amount<input id="expAmount" type="number" step="0.01" placeholder="0.00"></label>
+        <label>Date<input id="expDate" type="date"></label>
       </div>
-    </div>
-
-    <!-- Add Expense -->
-    <div class="divider"></div>
-    <h3 class="subhead">Add Expense</h3>
-    <div class="grid three">
-      <label>Name<input id="expName" placeholder="e.g., Fuel"></label>
-      <label>Amount<input id="expAmount" type="number" step="0.01" placeholder="0.00"></label>
-      <label>Date<input id="expDate" type="date"></label>
-    </div>
-    <div style="margin-top:8px">
-      <button id="addExpenseBtn" class="secondary">+ Add Expense</button>
-    </div>
-
-    <!-- Expenses list for the selected range -->
-    <div id="expensesList" class="history-list" style="margin-top:10px"></div>
-  </section>
-
-  <!-- Paid invoices for the range -->
-  <section class="card" id="profitDetailsCard" style="display:none">
-    <h2>Paid Invoices — <span id="profitRangeLabel"></span></h2>
-    <div class="history-controls">
-      <button id="profitDetailsClose" class="secondary">Back</button>
-    </div>
-    <div id="profitDetailsList" class="history-list"></div>
-  </section>
-
-  <!-- Standard invoice editor -->
-  <section class="card">
-    <h2>Your Business (pre-filled)</h2>
-    <div class="grid two">
-      <label>Business Name<input id="bizName" value="Heavy Metal Medics"></label>
-      <label>Email<input id="bizEmail" placeholder="you@example.com"></label>
-      <label>Phone<input id="bizPhone" placeholder="+1 (555) 555-5555"></label>
-      <label>Address<textarea id="bizAddr" rows="2" placeholder="Street, City, Province, Postal"></textarea></label>
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>Bill To</h2>
-    <div class="grid two">
-      <label>Client Name<input id="clientName"></label>
-      <label>Client Email<input id="clientEmail"></label>
-      <label>Client Phone<input id="clientPhone"></label>
-      <label>Client Address<textarea id="clientAddr" rows="2"></textarea></label>
-    </div>
-    <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
-      <button id="saveCustomerBtn" class="secondary">Save Customer</button>
-      <button id="openCustomersInlineBtn">Load Customer</button>
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>Line Items</h2>
-    <div id="items"></div>
-    <div id="presetButtons" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px"></div>
-    <div style="margin-top:8px">
-      <button id="addItemBtn" class="secondary">+ Add Item</button>
-    </div>
-
-    <div style="margin-top:12px; border-top:1px solid #ccc; padding-top:12px">
-      <h3 style="margin:0 0 8px 0; font-size:14px; color:#2e7d32">Save a new quick-add</h3>
-      <div class="grid two" style="gap:8px">
-        <label>Label (e.g., Labour)<input id="presetName" placeholder="Labour"></label>
-        <label>Price<input id="presetPrice" type="number" step="0.01" value="110"></label>
-        <label>Qty<input id="presetQty" type="number" step="0.01" value="1"></label>
-        <div><button id="addPresetBtn" class="secondary">Save Preset</button></div>
+      <div style="margin-top:8px">
+        <button id="addExpenseBtn" class="secondary">+ Add Expense</button>
       </div>
-      <div class="muted" style="margin-top:6px">Tip: Presets are saved on your device and appear as buttons above.</div>
-    </div>
-  </section>
 
-  <section class="card totals">
-    <div class="grid two">
-      <div>
-        <label>Notes<textarea id="notes" rows="3" placeholder="e.g., Thanks for your business!"></textarea></label>
-        <label>Terms<textarea id="terms" rows="3" placeholder="e.g., Payment due within 15 days."></textarea></label>
-      </div>
-      <div class="numbers">
-        <div><span>Subtotal</span><strong id="subtotal">$0.00</strong></div>
-        <div><span>Discount</span><strong id="discount">$0.00</strong></div>
-        <div><span>GST</span><strong id="tax">$0.00</strong></div>
-        <div class="grand"><span>Total</span><strong id="grandTotal">$0.00</strong></div>
-      </div>
-    </div>
-  </section>
+      <div id="expensesList" class="history-list" style="margin-top:10px"></div>
+    </section>
+  </div>
 
-  <section class="card preview">
-    <h2>Preview</h2>
-    <div id="preview"></div>
-  </section>
+  <!-- ===== PAGE: PROFIT DETAILS ===== -->
+  <div data-page="profit-details" id="page-profit-details">
+    <section class="card">
+      <div class="route-header">
+        <a class="backlink" href="#profit"><button class="secondary">Back</button></a>
+        <h2 style="margin:0">Paid Invoices — <span id="profitRangeLabel"></span></h2>
+      </div>
+      <div id="profitDetailsList" class="history-list"></div>
+    </section>
+  </div>
 </main>
 
 <footer>
