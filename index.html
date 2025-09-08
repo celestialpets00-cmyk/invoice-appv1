@@ -26,13 +26,14 @@
     <button id="saveInvoiceBtn">Save</button>
     <button id="loadInvoiceBtn">Invoices</button>
     <button id="openCustomersBtn">Customers</button>
+    <button id="profitBtn">Profit</button>
     <button id="markPaidBtn" class="secondary">Mark Paid</button>
     <button id="shareBtn">Share/Print</button>
   </div>
 </header>
 
 <main>
-  <!-- Saved Invoices (History) -->
+  <!-- Saved Invoices -->
   <section class="card" id="historyCard" style="display:none">
     <h2>Saved Invoices</h2>
     <div class="history-controls">
@@ -52,6 +53,70 @@
     <div id="customersList" class="history-list"></div>
   </section>
 
+  <!-- Profit & Expenses -->
+  <section class="card" id="profitCard" style="display:none">
+    <div class="profit-controls">
+      <div class="muted">Profit & Expenses</div>
+      <div class="spacer"></div>
+      <label style="display:flex; gap:6px; align-items:center;">
+        <span class="muted">Range</span>
+        <select id="profitRange"></select>
+      </label>
+      <button id="profitClose" class="secondary">Close</button>
+    </div>
+
+    <div class="profit-grid">
+      <!-- Left: Expenses donut & breakdown -->
+      <div class="expenses-pane">
+        <div class="section-title">EXPENSES</div>
+        <div class="donut-row">
+          <canvas id="expensesDonut" width="160" height="160" aria-label="Expenses donut chart"></canvas>
+          <div class="expenses-summary">
+            <div class="big-number" id="expensesTotal">$0.00</div>
+            <div class="muted">Total expenses</div>
+            <ul id="expensesBreakdown" class="legend"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Profit/Loss box -->
+      <div class="profit-pane">
+        <div class="section-title">PROFIT / LOSS</div>
+        <button id="profitTotalBtn" class="profit-big">$0.00</button>
+        <div class="muted small">Tap to view paid invoices in this range</div>
+        <div class="profit-actions">
+          <button id="profitDetailsBtn">View Details</button>
+          <button id="profitExportCsvBtn" class="secondary">Export Range (CSV)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Expense -->
+    <div class="divider"></div>
+    <h3 class="subhead">Add Expense</h3>
+    <div class="grid three">
+      <label>Name<input id="expName" placeholder="e.g., Fuel"></label>
+      <label>Amount<input id="expAmount" type="number" step="0.01" placeholder="0.00"></label>
+      <label>Date<input id="expDate" type="date"></label>
+    </div>
+    <div style="margin-top:8px">
+      <button id="addExpenseBtn" class="secondary">+ Add Expense</button>
+    </div>
+
+    <!-- Expenses list for the selected range -->
+    <div id="expensesList" class="history-list" style="margin-top:10px"></div>
+  </section>
+
+  <!-- Paid invoices for the range -->
+  <section class="card" id="profitDetailsCard" style="display:none">
+    <h2>Paid Invoices — <span id="profitRangeLabel"></span></h2>
+    <div class="history-controls">
+      <button id="profitDetailsClose" class="secondary">Back</button>
+    </div>
+    <div id="profitDetailsList" class="history-list"></div>
+  </section>
+
+  <!-- Standard invoice editor -->
   <section class="card">
     <h2>Your Business (pre-filled)</h2>
     <div class="grid two">
@@ -79,25 +144,18 @@
   <section class="card">
     <h2>Line Items</h2>
     <div id="items"></div>
-
-    <!-- Preset quick-add buttons (rendered by app.js) -->
     <div id="presetButtons" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px"></div>
-
-    <!-- Standard add item -->
     <div style="margin-top:8px">
       <button id="addItemBtn" class="secondary">+ Add Item</button>
     </div>
 
-    <!-- Add/save a new preset -->
     <div style="margin-top:12px; border-top:1px solid #ccc; padding-top:12px">
       <h3 style="margin:0 0 8px 0; font-size:14px; color:#2e7d32">Save a new quick-add</h3>
       <div class="grid two" style="gap:8px">
         <label>Label (e.g., Labour)<input id="presetName" placeholder="Labour"></label>
         <label>Price<input id="presetPrice" type="number" step="0.01" value="110"></label>
         <label>Qty<input id="presetQty" type="number" step="0.01" value="1"></label>
-        <div>
-          <button id="addPresetBtn" class="secondary">Save Preset</button>
-        </div>
+        <div><button id="addPresetBtn" class="secondary">Save Preset</button></div>
       </div>
       <div class="muted" style="margin-top:6px">Tip: Presets are saved on your device and appear as buttons above.</div>
     </div>
