@@ -170,9 +170,9 @@ footer {
   gap:10px;
   align-items:center;
   border-top:1px solid #ccc;
-  background:#ffffff;     /* ✅ Footer is pure white */
+  background:#ffffff;
 }
-footer .muted { font-size:12px; color:var(--muted); }
+footer .muted { font-size:12px; color:#888; }
 
 /* White preview card */
 .card.preview {
