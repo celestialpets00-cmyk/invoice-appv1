@@ -1,7 +1,7 @@
-// ====== Heavy Metal Medics — Invoice App ======
+// ====== Heavy Metal Medics — Invoice App (full file) ======
 const $ = (id) => document.getElementById(id);
 
-// Use the app icon as the default/logo everywhere
+// Use the app icon as the default/logo everywhere (baked-in branding)
 const LOGO_SRC = "icons/icon-192.png";
 
 const state = {
@@ -9,13 +9,19 @@ const state = {
   invoices: JSON.parse(localStorage.getItem("invoices.v1") || "[]"),
 };
 
-// Money formatter using the currency symbol in the form
+// ---------- Helpers ----------
 function money(n) {
   const c = $("currency").value || "$";
   return c + Number(n || 0).toFixed(2);
 }
+function escapeHtml(s) {
+  return (s || "").replace(/[&<>\"']/g, (m) => (
+    { "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#039;" }[m]
+  ));
+}
+function nl2br(s) { return (s || "").replace(/\n/g, "<br>"); }
 
-// Add a new line item row (or from existing data)
+// ---------- Items ----------
 function addItem(i = null) {
   const idx = state.items.length;
   const item = i || { description: "", qty: 1, price: 0 };
@@ -58,6 +64,7 @@ function addItem(i = null) {
   render();
 }
 
+// ---------- Totals ----------
 function calcTotals() {
   const subtotal = state.items.reduce((s, it) => s + (it.qty * it.price), 0);
   const discRate = parseFloat($("discountRate").value || 0) / 100;
@@ -69,6 +76,7 @@ function calcTotals() {
   return { subtotal, discount, tax, total };
 }
 
+// ---------- Invoice data ----------
 function currentInvoice() {
   return {
     business: {
@@ -76,7 +84,7 @@ function currentInvoice() {
       email: $("bizEmail").value,
       phone: $("bizPhone").value,
       addr:  $("bizAddr").value,
-      logo:  LOGO_SRC, // use the app icon as the invoice logo
+      logo:  LOGO_SRC, // Use the app icon as the invoice logo
     },
     invoice: {
       number: $("invNumber").value,
@@ -125,13 +133,7 @@ function setInvoice(data) {
   render();
 }
 
-function escapeHtml(s) {
-  return (s || "").replace(/[&<>\"']/g, (m) => (
-    { "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#039;" }[m]
-  ));
-}
-function nl2br(s) { return (s || "").replace(/\n/g, "<br>"); }
-
+// ---------- Render ----------
 function render() {
   const { subtotal, discount, tax, total } = calcTotals();
   $("subtotal").textContent   = money(subtotal);
@@ -200,11 +202,16 @@ function render() {
 
       ${inv.invoice.notes ? `<div style="margin-top:10px"><strong>Notes:</strong><br>${nl2br(escapeHtml(inv.invoice.notes))}</div>` : ""}
       ${inv.invoice.terms ? `<div style="margin-top:10px"><strong>Terms:</strong><br>${nl2br(escapeHtml(inv.invoice.terms))}</div>` : ""}
+
+      <!-- Footer watermark -->
+      <div style="margin-top:30px;text-align:center;font-size:12px;color:#2e7d32;opacity:0.8;border-top:1px solid #ccc;padding-top:8px">
+        Heavy Metal Medics — Agricultural Equipment Specialists
+      </div>
     </div>
   `;
 }
 
-// Save / Load / New
+// ---------- Save / Load / New ----------
 function saveInvoice() {
   const inv = currentInvoice();
   if (!inv.invoice.number) { alert("Please set an Invoice # first."); return; }
@@ -248,7 +255,7 @@ function newInvoice() {
   });
 }
 
-// Export / Import JSON
+// ---------- Backup / Restore ----------
 function exportJson() {
   const blob = new Blob([JSON.stringify({ invoices: state.invoices }, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -275,7 +282,7 @@ function importJson(e) {
   reader.readAsText(f);
 }
 
-// Init
+// ---------- Init ----------
 window.addEventListener("load", () => {
   const today = new Date().toISOString().slice(0, 10);
   $("invDate").value = today;
@@ -300,4 +307,9 @@ window.addEventListener("load", () => {
   const lastBiz = JSON.parse(localStorage.getItem("lastBiz.v1") || "null");
   if (lastBiz) setInvoice({ business:lastBiz, invoice:{ date:today, number:"INV-" + Date.now().toString().slice(-6), currency:"$" }, items:[] });
   else render();
+
+  // Register service worker if available (for offline support)
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  }
 });
