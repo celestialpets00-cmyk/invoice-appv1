@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Invoice Maker — Heavy Metal Medics</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0b0f0c">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="app.js"></script>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <!-- Logo baked into the app -->
+    <img class="brand-logo" src="icons/icon-192.png" alt="Heavy Metal Medics Logo">
+    <div class="brand-text">
+      <h1>Heavy Metal Medics</h1>
+      <div class="muted">Invoice Maker</div>
+    </div>
+  </div>
+  <div class="actions">
+    <button id="newInvoiceBtn" class="primary">New</button>
+    <button id="saveInvoiceBtn">Save</button>
+    <button id="loadInvoiceBtn">Load</button>
+    <button id="shareBtn">Share/Print</button>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Your Business (pre-filled)</h2>
+    <div class="grid two">
+      <label>Business Name<input id="bizName" value="Heavy Metal Medics"></label>
+      <label>Email<input id="bizEmail" placeholder="you@example.com"></label>
+      <label>Phone<input id="bizPhone" placeholder="+1 (555) 555-5555"></label>
+      <label>Address<textarea id="bizAddr" rows="2" placeholder="Street, City, Province, Postal"></textarea></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Invoice Details</h2>
+    <div class="grid two">
+      <label>Invoice #<input id="invNumber" placeholder="INV-1001"></label>
+      <label>Date<input id="invDate" type="date"></label>
+      <label>Due Date<input id="dueDate" type="date"></label>
+      <label>Currency<input id="currency" value="$"></label>
+      <label>Tax %<input id="taxRate" type="number" step="0.01" value="0"></label>
+      <label>Discount %<input id="discountRate" type="number" step="0.01" value="0"></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Bill To</h2>
+    <div class="grid two">
+      <label>Client Name<input id="clientName"></label>
+      <label>Client Email<input id="clientEmail"></label>
+      <label>Client Phone<input id="clientPhone"></label>
+      <label>Client Address<textarea id="clientAddr" rows="2"></textarea></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Line Items</h2>
+    <div id="items"></div>
+    <button id="addItemBtn" class="secondary">+ Add Item</button>
+  </section>
+
+  <section class="card totals">
+    <div class="grid two">
+      <div>
+        <label>Notes<textarea id="notes" rows="3" placeholder="e.g., Thanks for your business!"></textarea></label>
+        <label>Terms<textarea id="terms" rows="3" placeholder="e.g., Payment due within 15 days."></textarea></label>
+      </div>
+      <div class="numbers">
+        <div><span>Subtotal</span><strong id="subtotal">$0.00</strong></div>
+        <div><span>Discount</span><strong id="discount">$0.00</strong></div>
+        <div><span>Tax</span><strong id="tax">$0.00</strong></div>
+        <div class="grand"><span>Total</span><strong id="grandTotal">$0.00</strong></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card preview">
+    <h2>Preview</h2>
+    <div id="preview"></div>
+  </section>
+</main>
+
+<footer>
+  <button id="exportJsonBtn">Export JSON</button>
+  <input type="file" id="importJsonInput" accept="application/json" style="display:none">
+  <button id="importJsonBtn">Import JSON</button>
+  <span class="muted">All data stays on your device (local only).</span>
+</footer>
+
+</body>
+</html>
