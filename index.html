@@ -12,11 +12,12 @@
   <link rel="stylesheet" href="style.css">
   <script defer src="app.js"></script>
   <style>
-    /* Simple “page” routing */
-    [data-page] { display:none; }
-    [data-page].active { display:block; }
-    .route-header { display:flex; gap:8px; align-items:center; margin-bottom:8px }
-    .backlink { text-decoration:none; }
+    /* Router pages */
+    [data-page]{display:none}
+    [data-page].active{display:block}
+    .route-header{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+    .backlink{text-decoration:none}
+    .spacer{flex:1}
   </style>
 </head>
 <body>
@@ -43,7 +44,6 @@
 <main>
   <!-- ===== PAGE: HOME ===== -->
   <div data-page="home" id="page-home" class="active">
-    <!-- Your business -->
     <section class="card">
       <h2>Your Business (pre-filled)</h2>
       <div class="grid two">
@@ -54,7 +54,6 @@
       </div>
     </section>
 
-    <!-- Bill to -->
     <section class="card">
       <h2>Bill To</h2>
       <div class="grid two">
@@ -69,7 +68,6 @@
       </div>
     </section>
 
-    <!-- Invoice Details -->
     <section class="card">
       <h2>Invoice Details</h2>
       <div class="grid two">
@@ -84,16 +82,11 @@
             <option value="£">£</option>
           </select>
         </label>
-        <label>GST % (fixed)
-          <input id="taxRate" value="5" disabled>
-        </label>
-        <label>Discount %
-          <input id="discountRate" type="number" step="0.01" value="0">
-        </label>
+        <label>GST % (fixed)<input id="taxRate" value="5" disabled></label>
+        <label>Discount %<input id="discountRate" type="number" step="0.01" value="0"></label>
       </div>
     </section>
 
-    <!-- Items -->
     <section class="card">
       <h2>Line Items</h2>
       <div id="items"></div>
@@ -114,7 +107,6 @@
       </div>
     </section>
 
-    <!-- Totals -->
     <section class="card totals">
       <div class="grid two">
         <div>
@@ -130,7 +122,6 @@
       </div>
     </section>
 
-    <!-- Preview -->
     <section class="card preview">
       <h2>Preview</h2>
       <div id="preview"></div>
