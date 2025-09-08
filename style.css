@@ -1,10 +1,10 @@
 :root {
-  --bg:#0a0c10;
-  --card:#11151b;
-  --ink:#e9eef2;
-  --muted:#9fb0bf;
-  --line:#1f2735;
-  --accent:#2e7d32; /* green accent */
+  --bg:#ffffff;          /* ✅ White background */
+  --card:#ffffff;        /* ✅ White cards */
+  --ink:#000000;         /* ✅ Black text */
+  --muted:#555555;       /* ✅ Muted gray text */
+  --line:#cccccc;        /* ✅ Light gray borders */
+  --accent:#2e7d32;      /* ✅ Green accent */
 }
 
 * { box-sizing:border-box; }
@@ -20,7 +20,7 @@ html, body {
 header {
   position:sticky;
   top:0;
-  background:linear-gradient(180deg,#0b0f0c,#0a0c10);
+  background:#f5f5f5;        /* ✅ Light header */
   padding:10px 12px;
   border-bottom:2px solid var(--accent);
   display:grid;
@@ -37,7 +37,6 @@ header {
   height:46px;
   aspect-ratio:1/1;
   object-fit:contain;
-  filter:drop-shadow(0 0 0 var(--accent));
 }
 .brand-text h1 {
   font-size:18px;
@@ -53,18 +52,22 @@ header {
 /* Buttons */
 button {
   border:1px solid #ccc;
-  background:#fff;         /* ✅ White background */
-  color:#000;              /* ✅ Black text */
+  background:#fff;
+  color:#000;
   border-radius:10px;
   padding:10px 12px;
   font-size:14px;
+  cursor:pointer;
 }
 button.primary {
-  background:var(--accent); /* ✅ Green for main New button */
+  background:var(--accent);
   border-color:#3a9b3f;
   color:#fff;
 }
-button.secondary { background:#f5f5f5; color:#000; }
+button.secondary {
+  background:#f0f0f0;
+  color:#000;
+}
 button:active { transform:scale(0.99); }
 
 /* Layout */
@@ -85,11 +88,11 @@ label {
   color:var(--muted);
 }
 input, textarea {
-  background:#fff;   /* ✅ White input background */
+  background:#fff;
   border:1px solid #ccc;
   border-radius:10px;
   padding:10px;
-  color:#000;        /* ✅ Black text in inputs */
+  color:#000;
   font-size:15px;
   width:100%;
 }
@@ -121,14 +124,14 @@ input, textarea {
   display:flex;
   justify-content:space-between;
   align-items:center;
-  color:#000; /* ✅ Totals now black */
+  color:#000; /* Black totals */
 }
 .totals .numbers .grand {
   font-size:18px;
   border-top:1px dashed #ccc;
   padding-top:8px;
   margin-top:8px;
-  color:#000; /* ✅ Grand total black */
+  color:#000;
 }
 
 /* Preview invoice */
@@ -166,11 +169,12 @@ footer {
   display:flex;
   gap:10px;
   align-items:center;
-  border-top:1px solid var(--line);
+  border-top:1px solid #ccc;
+  background:#f5f5f5;      /* ✅ Light footer */
 }
 footer .muted { font-size:12px; color:var(--muted); }
 
-/* ✅ White background for preview card */
+/* White preview card */
 .card.preview {
   background:#fff;
   color:#000;
