@@ -30,6 +30,16 @@
 </header>
 
 <main>
+  <!-- Saved Invoices (History) -->
+  <section class="card" id="historyCard" style="display:none">
+    <h2>Saved Invoices</h2>
+    <div class="history-controls">
+      <input id="historySearch" placeholder="Search by invoice # or client name">
+      <button id="historyClose" class="secondary">Close</button>
+    </div>
+    <div id="historyList" class="history-list"></div>
+  </section>
+
   <section class="card">
     <h2>Your Business (pre-filled)</h2>
     <div class="grid two">
