@@ -52,19 +52,19 @@ header {
 
 /* Buttons */
 button {
-  border:1px solid var(--line);
-  background:#16202c;
-  color:var(--ink);
+  border:1px solid #ccc;
+  background:#fff;         /* ✅ White background */
+  color:#000;              /* ✅ Black text */
   border-radius:10px;
   padding:10px 12px;
   font-size:14px;
 }
 button.primary {
-  background:var(--accent);
+  background:var(--accent); /* ✅ Green for main New button */
   border-color:#3a9b3f;
   color:#fff;
 }
-button.secondary { background:#142030; }
+button.secondary { background:#f5f5f5; color:#000; }
 button:active { transform:scale(0.99); }
 
 /* Layout */
@@ -85,11 +85,11 @@ label {
   color:var(--muted);
 }
 input, textarea {
-  background:#0f141b;
-  border:1px solid var(--line);
+  background:#fff;   /* ✅ White input background */
+  border:1px solid #ccc;
   border-radius:10px;
   padding:10px;
-  color:var(--ink);
+  color:#000;        /* ✅ Black text in inputs */
   font-size:15px;
   width:100%;
 }
@@ -103,7 +103,11 @@ input, textarea {
   margin-bottom:8px;
 }
 #items .item input { width:100%; }
-#items .remove { border-color:#4b1f25; background:#2b1216; }
+#items .remove {
+  border-color:#a33;
+  background:#f8d7da;
+  color:#a33;
+}
 
 /* Totals */
 .totals .numbers {
@@ -117,14 +121,68 @@ input, textarea {
   display:flex;
   justify-content:space-between;
   align-items:center;
+  color:#000; /* ✅ Totals now black */
 }
 .totals .numbers .grand {
   font-size:18px;
-  border-top:1px dashed var(--line);
+  border-top:1px dashed #ccc;
   padding-top:8px;
   margin-top:8px;
-  color:#fff;
+  color:#000; /* ✅ Grand total black */
 }
 
 /* Preview invoice */
-.pr
+.preview #previewDoc {
+  background:#fff;
+  color:#000;
+  padding:18px;
+  border-radius:8px;
+  border-top:4px solid var(--accent);
+}
+.preview .header {
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+  margin-bottom:12px;
+}
+.preview .logo { max-height:70px; }
+.preview .muted { color:#555; }
+.preview table {
+  width:100%;
+  border-collapse:collapse;
+  margin-top:8px;
+}
+.preview th, .preview td {
+  border-bottom:1px solid #ddd;
+  padding:8px;
+  text-align:left;
+}
+.preview tfoot td { font-weight:bold; }
+
+/* Footer */
+footer {
+  padding:10px 12px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  border-top:1px solid var(--line);
+}
+footer .muted { font-size:12px; color:var(--muted); }
+
+/* ✅ White background for preview card */
+.card.preview {
+  background:#fff;
+  color:#000;
+}
+
+/* Responsive + print */
+@media (max-width:800px) {
+  .grid.two { grid-template-columns:1fr; }
+  #items .item { grid-template-columns:1fr 100px 100px auto; }
+}
+@media print {
+  body { background:#fff; }
+  header, footer, .card:not(.preview) { display:none; }
+  .preview #previewDoc { padding:0; }
+}
