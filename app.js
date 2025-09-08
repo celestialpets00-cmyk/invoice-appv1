@@ -1,11 +1,12 @@
-// ===== Heavy Metal Medics — Invoice App (v10.2 hardened) =====
-const $ = (id) => document.getElementById(id);
+// ===== Heavy Metal Medics — Invoice App (v11, routed pages + hardened) =====
 
-// Safe helpers
+// ---------- Tiny helpers ----------
+const $ = (id) => document.getElementById(id);
+const has = (id) => !!$(id);
+const on = (id, evt, fn) => { const el = $(id); if (el && el.addEventListener) el.addEventListener(evt, fn); };
 const val = (id, def = "") => { const el = $(id); return (el && "value" in el) ? el.value : def; };
 const setVal = (id, v) => { const el = $(id); if (el && "value" in el) el.value = v; };
-const on = (id, evt, fn) => { const el = $(id); if (el && el.addEventListener) el.addEventListener(evt, fn); };
-const has = (id) => !!$(id);
+
 const LOGO_SRC = "icons/icon-192.png";
 
 const state = {
@@ -16,15 +17,15 @@ const state = {
     { label: "Travel", price: 110, qty: 1 }
   ],
   customers: JSON.parse(localStorage.getItem("customers.v1") || "[]"),
-  expenses: JSON.parse(localStorage.getItem("expenses.v1") || "[]"),
+  expenses: JSON.parse(localStorage.getItem("expenses.v1") || "[]"), // {id,name,amount,date}
   GST_RATE: 5,
   paid: false
 };
 
-// ---------- Utils ----------
+// ---------- Generic utils ----------
 const moneySym = () => (val("currency") || "$");
 const money = (n) => moneySym() + Number(n || 0).toFixed(2);
-const escapeHtml = (s) => (s || "").replace(/[&<>\"']/g,(m)=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));
+const escapeHtml = (s) => (s || "").replace(/[&<>\"']/g,(m)=>({"&":"&amp;","<":"&lt;","&gt;":">","\"":"&quot;","'":"&#039;"}[m]));
 const nl2br = (s) => (s || "").replace(/\n/g,"<br>");
 const toISO = (d) => d.toISOString().slice(0,10);
 const parseISO = (s) => { const d = new Date(s); return isFinite(d) ? d : new Date(); };
@@ -41,9 +42,15 @@ function computeTotalsFrom(inv){
   return { subtotal, discount, tax, total };
 }
 
-// CSV helpers
+// ---------- CSV helpers ----------
 function toCsvValue(v){ const s=String(v ?? "").replace(/\"/g,'""'); return /[",\n]/.test(s)?'"'+s+'"':s; }
-function downloadCsv(name, rows){ const csv = rows.map(r=>r.map(toCsvValue).join(",")).join("\n"); const blob = new Blob([csv],{type:"text/csv"}); const url = URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=name; a.click(); URL.revokeObjectURL(url); }
+function downloadCsv(name, rows){
+  const csv = rows.map(r=>r.map(toCsvValue).join(",")).join("\n");
+  const blob = new Blob([csv],{type:"text/csv"});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=name; a.click();
+  URL.revokeObjectURL(url);
+}
 
 // ---------- Items ----------
 function addItem(i=null){
@@ -130,49 +137,45 @@ function saveCurrentAsCustomer(){
   if (i>=0) state.customers[i]=c; else state.customers.unshift(c);
   saveCustomers(); alert("Customer saved.");
 }
-function showCustomers(show){
-  if (!has("customersCard")) return;
-  $("customersCard").style.display = show ? "block" : "none";
-  if (show){ setVal("customerSearch",""); renderCustomersList(""); }
-}
 function renderCustomersList(qText=""){
   if (!has("customersList")) return;
   const q=(qText||"").toLowerCase();
-  const filtered = state.customers.filter(c=>
-    (c.name||"").toLowerCase().includes(q)
-    || (c.email||"").toLowerCase().includes(q)
-    || (c.phone||"").toLowerCase().includes(q)
+  const filtered=state.customers.filter(c=>
+    (c.name||"").toLowerCase().includes(q) ||
+    (c.email||"").toLowerCase().includes(q) ||
+    (c.phone||"").toLowerCase().includes(q)
   );
-  const rows = filtered.map((c,i)=>`
+  const rows=filtered.map((c,i)=>`
     <tr>
-      <td><strong>${escapeHtml(c.name||"")}</strong><div class="muted">${escapeHtml(c.email||"")} ${c.phone?" · "+escapeHtml(c.phone):""}</div></td>
+      <td><strong>${escapeHtml(c.name||"")}</strong>
+        <div class="muted">${escapeHtml(c.email||"")} ${c.phone?" · "+escapeHtml(c.phone):""}</div>
+      </td>
       <td>${escapeHtml((c.addr||"").replace(/\n/g," "))}</td>
       <td class="row-actions">
         <button data-act="use" data-idx="${i}">Use</button>
         <button data-act="del" data-idx="${i}" class="secondary">Delete</button>
       </td>
-    </tr>
-  `).join("");
+    </tr>`).join("");
   $("customersList").innerHTML = `
     <div class="history-list"><table>
       <thead><tr><th>Customer</th><th>Address</th><th style="width:160px">Actions</th></tr></thead>
       <tbody>${rows || '<tr><td colspan="3" class="muted">No saved customers yet.</td></tr>'}</tbody>
-    </table></div>
-  `;
+    </table></div>`;
 
   $("customersList").querySelectorAll("button[data-act='use']").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
+    btn.addEventListener("click",()=>{
       const i=parseInt(btn.getAttribute("data-idx"),10);
       const c=filtered[i]; if (!c) return;
       setVal("clientName", c.name||"");
       setVal("clientEmail", c.email||"");
       setVal("clientPhone", c.phone||"");
       setVal("clientAddr", c.addr||"");
-      render(); showCustomers(false);
+      render();
+      location.hash = "#home";
     });
   });
   $("customersList").querySelectorAll("button[data-act='del']").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
+    btn.addEventListener("click",()=>{
       const i=parseInt(btn.getAttribute("data-idx"),10);
       const c=filtered[i];
       const real=state.customers.findIndex(x=>x===c);
@@ -229,9 +232,9 @@ function setInvoice(data){
   state.paid = !!data.paid;
 
   if ($("#items")){
-    $("#items").innerHTML = "";
-    state.items = [];
-    (data.items || []).forEach(addItem);
+    $("#items").innerHTML="";
+    state.items=[];
+    (data.items||[]).forEach(addItem);
   }
   render();
 }
@@ -240,8 +243,7 @@ function setInvoice(data){
 const saveInvoices = ()=> localStorage.setItem("invoices.v1", JSON.stringify(state.invoices));
 const saveExpenses = ()=> localStorage.setItem("expenses.v1", JSON.stringify(state.expenses));
 
-// ---------- History ----------
-function showHistory(show){ if (!has("historyCard")) return; $("historyCard").style.display=show?"block":"none"; if (show){ setVal("historySearch",""); renderHistoryList(""); } }
+// ---------- History (Invoices) ----------
 function renderHistoryList(filterText=""){
   if (!has("historyList")) return;
   const q=(filterText||"").toLowerCase();
@@ -268,11 +270,16 @@ function renderHistoryList(filterText=""){
     </table></div>`;
 
   $("historyList").querySelectorAll("button[data-act='open']").forEach(b=>b.addEventListener("click",()=>{
-    const num=b.getAttribute("data-num"); const inv=state.invoices.find(x=>(x.invoice?.number||"")===num); if (inv){ setInvoice(inv); showHistory(false); }
+    const num=b.getAttribute("data-num");
+    const inv=state.invoices.find(x=>(x.invoice?.number||"")===num);
+    if (inv){ setInvoice(inv); location.hash="#home"; }
   }));
   $("historyList").querySelectorAll("button[data-act='del']").forEach(b=>b.addEventListener("click",()=>{
-    const num=b.getAttribute("data-num"); const i=state.invoices.findIndex(x=>(x.invoice?.number||"")===num);
-    if (i>=0 && confirm(`Delete invoice ${num}?`)){ state.invoices.splice(i,1); saveInvoices(); renderHistoryList(val("historySearch")); renderProfit(); }
+    const num=b.getAttribute("data-num");
+    const i=state.invoices.findIndex(x=>(x.invoice?.number||"")===num);
+    if (i>=0 && confirm(`Delete invoice ${num}?`)){
+      state.invoices.splice(i,1); saveInvoices(); renderHistoryList(val("historySearch")); renderProfit();
+    }
   }));
 }
 
@@ -291,7 +298,11 @@ function rangeOptions(){
     {val:"all", label:"All time"}
   ];
 }
-function fillProfitRange(){ if (!has("profitRange")) return; $("profitRange").innerHTML = rangeOptions().map(o=>`<option value="${o.val}">${o.label}</option>`).join(""); $("profitRange").value="last30"; }
+function fillProfitRange(){
+  if (!has("profitRange")) return;
+  $("profitRange").innerHTML = rangeOptions().map(o=>`<option value="${o.val}">${o.label}</option>`).join("");
+  $("profitRange").value="last30";
+}
 function inRange(dateStr, r){
   const d = parseISO(dateStr); const today=new Date(); const yStart=new Date(today.getFullYear(),0,1);
   if (r==="last30"){ const from=new Date(today); from.setDate(from.getDate()-30); return d>=from && d<=today; }
@@ -352,7 +363,7 @@ function renderExpensesBreakdown(rangeVal){
   });
 }
 function renderProfit(){
-  if (!has("profitCard") || $("profitCard").style.display==="none") return;
+  if (!document.querySelector('[data-page="profit"].active')) return;
   const rangeVal = val("profitRange") || "last30";
   const incomes = paidInvoicesInRange(rangeVal);
   const incomeTotal = sum(incomes, inv => computeTotalsFrom(inv).total);
@@ -366,44 +377,36 @@ function renderProfit(){
   }
   if (has("profitRangeLabel")) $("profitRangeLabel").textContent = ($("#profitRange")?.selectedOptions?.[0]?.textContent || "range");
 }
-function showProfitScreen(show){
-  if (!has("profitCard")) return;
-  $("profitCard").style.display = show ? "block" : "none";
-  if (show){ fillProfitRange(); renderProfit(); setVal("expDate", toISO(new Date())); }
+function showProfitDetails(renderOnly=false){
+  if (!has("profitDetailsList")) return;
+  const rv = val("profitRange") || "last30";
+  if (has("profitRangeLabel")) $("profitRangeLabel").textContent = ($("#profitRange")?.selectedOptions?.[0]?.textContent || "range");
+  const paid = paidInvoicesInRange(rv);
+  const rows = paid.map(inv=>{
+    const {total}=computeTotalsFrom(inv);
+    const num=escapeHtml(inv.invoice?.number||"");
+    const date=escapeHtml(inv.invoice?.date||"");
+    const client=escapeHtml(inv.client?.name||"");
+    return `<tr>
+      <td>${num}</td><td>${date}</td><td>${client}</td><td>${money(total)}</td>
+      <td class="row-actions"><button data-num="${num}" data-act="open">Open</button></td>
+    </tr>`;
+  }).join("");
+  $("profitDetailsList").innerHTML = `
+    <div class="history-list"><table>
+      <thead><tr><th>Invoice #</th><th>Date</th><th>Client</th><th>Total</th><th style="width:120px">Actions</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="5" class="muted">No paid invoices in this range.</td></tr>'}</tbody>
+    </table></div>`;
+  $("profitDetailsList").querySelectorAll("button[data-act='open']").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const num=btn.getAttribute("data-num");
+      const inv=state.invoices.find(x=>(x.invoice?.number||"")===num);
+      if (inv){ setInvoice(inv); location.hash="#home"; }
+    });
+  });
 }
-function showProfitDetails(show){
-  if (!has("profitDetailsCard")) return;
-  $("profitDetailsCard").style.display = show ? "block" : "none";
-  if (show){
-    const rv = val("profitRange") || "last30";
-    if (has("profitRangeLabel")) $("profitRangeLabel").textContent = ($("#profitRange")?.selectedOptions?.[0]?.textContent || "range");
-    const paid = paidInvoicesInRange(rv);
-    const rows = paid.map(inv=>{
-      const {total}=computeTotalsFrom(inv);
-      const num=escapeHtml(inv.invoice?.number||"");
-      const date=escapeHtml(inv.invoice?.date||"");
-      const client=escapeHtml(inv.client?.name||"");
-      return `<tr>
-        <td>${num}</td><td>${date}</td><td>${client}</td><td>${money(total)}</td>
-        <td class="row-actions"><button data-num="${num}" data-act="open">Open</button></td>
-      </tr>`;
-    }).join("");
-    if (has("profitDetailsList")){
-      $("profitDetailsList").innerHTML = `
-        <div class="history-list"><table>
-          <thead><tr><th>Invoice #</th><th>Date</th><th>Client</th><th>Total</th><th style="width:120px">Actions</th></tr></thead>
-          <tbody>${rows || '<tr><td colspan="5" class="muted">No paid invoices in this range.</td></tr>'}</tbody>
-        </table></div>`;
-      $("profitDetailsList").querySelectorAll("button[data-act='open']").forEach(btn=>{
-        btn.addEventListener("click",()=>{
-          const num=btn.getAttribute("data-num");
-          const inv=state.invoices.find(x=>(x.invoice?.number||"")===num);
-          if (inv){ setInvoice(inv); showProfitDetails(false); showProfitScreen(false); }
-        });
-      });
-    }
-  }
-}
+
+// Export CSV for range (income + expenses)
 function exportProfitRangeCsv(){
   const rv = val("profitRange") || "last30";
   const paid = paidInvoicesInRange(rv);
@@ -418,7 +421,7 @@ function exportProfitRangeCsv(){
   downloadCsv(`profit_${label}.csv`, rows);
 }
 
-// ---------- Render (invoice preview) ----------
+// ---------- Render Invoice Preview ----------
 function render(){
   const {subtotal,discount,tax,total}=calcTotals();
   if (has("subtotal"))   $("subtotal").textContent=money(subtotal);
@@ -464,36 +467,48 @@ function render(){
   if (has("markPaidBtn")) $("markPaidBtn").textContent = state.paid ? "Mark Unpaid" : "Mark Paid";
 }
 
+// ---------- Router ----------
+const PAGES = ["home","history","customers","profit","profit-details"];
+function routeTo(hash){
+  const page = (hash||"").replace(/^#/, "") || "home";
+  PAGES.forEach(p=>{
+    const el = document.querySelector(`[data-page="${p}"]`);
+    if (el) el.classList.toggle("active", p===page);
+  });
+  if (page==="history"){ renderHistoryList(val("historySearch")); }
+  if (page==="customers"){ renderCustomersList(val("customerSearch")); }
+  if (page==="profit"){ fillProfitRange(); renderProfit(); }
+  if (page==="profit-details"){ showProfitDetails(true); }
+}
+window.addEventListener("hashchange", ()=> routeTo(location.hash));
+
 // ---------- Init / Events ----------
 window.addEventListener("load", ()=>{
-  try {
+  try{
     const today = toISO(new Date());
     if (has("invDate"))   setVal("invDate", today);
     if (has("invNumber")) setVal("invNumber", "INV-" + Date.now().toString().slice(0,6));
     if (has("taxRate")) { setVal("taxRate", String(state.GST_RATE)); $("taxRate").setAttribute("disabled","disabled"); }
+    if (has("expDate")) setVal("expDate", today);
 
+    // Line items + presets
     on("addItemBtn","click",()=>addItem());
     renderPresetButtons(); wirePresetForm();
 
-    on("loadInvoiceBtn","click",()=>showHistory(true));
-    on("historyClose","click",()=>showHistory(false));
-    on("historySearch","input",(e)=>renderHistoryList(e.target.value));
-
+    // Customers page
     on("saveCustomerBtn","click",saveCurrentAsCustomer);
-    on("openCustomersBtn","click",()=>showCustomers(true));
-    on("openCustomersInlineBtn","click",()=>showCustomers(true));
-    on("customersClose","click",()=>showCustomers(false));
     on("customerSearch","input",(e)=>renderCustomersList(e.target.value));
 
-    on("profitBtn","click",()=>showProfitScreen(true));
-    on("profitClose","click",()=>showProfitScreen(false));
+    // History page
+    on("historySearch","input",(e)=>renderHistoryList(e.target.value));
+
+    // Profit page
     on("profitRange","change",renderProfit);
-    on("profitTotalBtn","click",()=>showProfitDetails(true));
-    on("profitDetailsBtn","click",()=>showProfitDetails(true));
-    on("profitDetailsClose","click",()=>showProfitDetails(false));
+    on("profitTotalBtn","click",()=>{ location.hash="#profit-details"; });
+    on("profitDetailsBtn","click",()=>{ location.hash="#profit-details"; });
     on("profitExportCsvBtn","click",exportProfitRangeCsv);
 
-    if (has("expDate")) setVal("expDate", today);
+    // Add expense
     on("addExpenseBtn","click",()=>{
       const name=(val("expName")||"").trim();
       const amt=parseFloat(val("expAmount")||0);
@@ -505,6 +520,7 @@ window.addEventListener("load", ()=>{
       renderProfit();
     });
 
+    // Invoice actions
     on("saveInvoiceBtn","click",()=>{
       const inv=currentInvoice();
       if (!inv.invoice.number) return alert("Please set an Invoice # first.");
@@ -536,6 +552,7 @@ window.addEventListener("load", ()=>{
       alert(state.paid ? "Invoice marked as PAID." : "Invoice marked as UNPAID.");
     });
 
+    // Import / Export
     on("importJsonBtn","click",()=> $("importJsonInput")?.click());
     on("importJsonInput","change",(e)=>{
       const f=e.target.files?.[0]; if (!f) return;
@@ -564,7 +581,9 @@ window.addEventListener("load", ()=>{
       const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="invoices_backup.json"; a.click(); URL.revokeObjectURL(url);
     });
     on("exportCustomersCsvBtn","click",()=>{
-      const rows=[["Name","Email","Phone","Address"]]; state.customers.forEach(c=>rows.push([c.name||"",c.email||"",c.phone||"", (c.addr||"").replace(/\n/g," ")])); downloadCsv("customers.csv",rows);
+      const rows=[["Name","Email","Phone","Address"]];
+      state.customers.forEach(c=>rows.push([c.name||"",c.email||"",c.phone||"", (c.addr||"").replace(/\n/g," ")]));
+      downloadCsv("customers.csv",rows);
     });
     on("exportInvoicesCsvBtn","click",()=>{
       const rows=[["Invoice #","Date","Client","Email","Phone","Subtotal","Discount","GST","Total","Paid","Items"]];
@@ -576,20 +595,24 @@ window.addEventListener("load", ()=>{
       downloadCsv("invoices.csv",rows);
     });
 
+    // Live re-render on edits
     ["bizName","bizEmail","bizPhone","bizAddr","invNumber","invDate","dueDate","currency","discountRate","notes","terms","clientName","clientEmail","clientPhone","clientAddr"].forEach(id=>{
       if (has(id)) $(id).addEventListener("input", render);
     });
 
+    // Seed UI
     const lastBiz = JSON.parse(localStorage.getItem("lastBiz.v1") || "null");
-    if (lastBiz) setInvoice({ business:lastBiz, invoice:{ date:toISO(new Date()), number:"INV-"+Date.now().toString().slice(0,6), currency:"$" }, items:[], paid:false });
+    if (lastBiz) setInvoice({ business:lastBiz, invoice:{ date:today, number:"INV-"+Date.now().toString().slice(0,6), currency:"$" }, items:[], paid:false });
     else render();
 
+    // Router first draw
+    routeTo(location.hash);
+
+    // PWA
     if ("serviceWorker" in navigator) {
-      // Normal registration (no unregister)
       navigator.serviceWorker.register("sw.js").catch(()=>{});
     }
-  } catch (err) {
-    // If anything slips through, show an inline notice so buttons don’t silently fail
+  }catch(err){
     console.error(err);
     alert("Setup error: " + (err?.message || err));
   }
